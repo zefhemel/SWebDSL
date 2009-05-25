@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="swebdsl" default="all">
+  
+  
+  <property file="swebdsl.properties"/>
+  <!-- Uncomment the following property if no tests compilation is needed -->
+  <!-- 
+  <property name="skip.tests" value="true"/>
+   -->
+  
+  <!-- Compiler options -->
+  
+  <property name="compiler.debug" value="on"/>
+  <property name="compiler.generate.no.warnings" value="off"/>
+  <property name="compiler.args" value=""/>
+  <property name="compiler.max.memory" value="128m"/>
+  <patternset id="ignored.files">
+    <exclude name="**/CVS/**"/>
+    <exclude name="**/SCCS/**"/>
+    <exclude name="**/RCS/**"/>
+    <exclude name="**/rcs/**"/>
+    <exclude name="**/.DS_Store/**"/>
+    <exclude name="**/.svn/**"/>
+    <exclude name="**/.pyc/**"/>
+    <exclude name="**/.pyo/**"/>
+    <exclude name="**/*.pyc/**"/>
+    <exclude name="**/*.pyo/**"/>
+    <exclude name="**/.git/**"/>
+    <exclude name="**/vssver.scc/**"/>
+    <exclude name="**/vssver2.scc/**"/>
+  </patternset>
+  <patternset id="library.patterns">
+    <include name="*.zip"/>
+    <include name="*.war"/>
+    <include name="*.egg"/>
+    <include name="*.ear"/>
+    <include name="*.swc"/>
+    <include name="*.jar"/>
+  </patternset>
+  <patternset id="compiler.resources">
+    <include name="**/?*.properties"/>
+    <include name="**/?*.xml"/>
+    <include name="**/?*.gif"/>
+    <include name="**/?*.png"/>
+    <include name="**/?*.jpeg"/>
+    <include name="**/?*.jpg"/>
+    <include name="**/?*.html"/>
+    <include name="**/?*.dtd"/>
+    <include name="**/?*.tld"/>
+    <include name="**/?*.ftl"/>
+  </patternset>
+
+  
+  <!-- Project Libraries -->
+  
+  <path id="library.scala-2.7.4.classpath">
+    <fileset dir="${basedir}/lib">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <pathelement location="/Domain/tudelft.net/Users/zhemel/workspace/InternalWebDsl/lib/servlet-api.jar"/>
+    <pathelement location="/opt/scala/lib/scala-compiler.jar"/>
+    <pathelement location="/opt/scala/lib/scala-library.jar"/>
+  </path>
+  
+  
+  <!-- Application Server Libraries -->
+  
+  <!-- Custom Compiler Taskdefs -->
+  <property name="scalac.task.sdk" value="library.scala-2.7.4.classpath"/>
+  <taskdef name="scalac" classname="scala.tools.ant.Scalac" classpathref="${scalac.task.sdk}"/>
+  
+  <!-- Modules -->
+  
+  
+  <!-- Module SWebDSL -->
+  
+  <dirname property="module.swebdsl.basedir" file="${ant.file}"/>
+
+  <property name="compiler.args.swebdsl" value="${compiler.args}"/>
+  
+  <property name="swebdsl.output.dir" value="${module.swebdsl.basedir}/out/production/SWebDSL"/>
+  <property name="swebdsl.testoutput.dir" value="${module.swebdsl.basedir}/out/test/SWebDSL"/>
+  
+  <path id="swebdsl.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="swebdsl.module.classpath">
+    <path refid="library.scala-2.7.4.classpath"/>
+  </path>
+  
+  <path id="swebdsl.runtime.module.classpath">
+    <pathelement location="${swebdsl.output.dir}"/>
+    <pathelement location="${swebdsl.testoutput.dir}"/>
+    <path refid="library.scala-2.7.4.classpath"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.swebdsl">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.swebdsl">
+    <patternset refid="excluded.from.module.swebdsl"/>
+  </patternset>
+  
+  <path id="swebdsl.module.sourcepath">
+    <dirset dir="${module.swebdsl.basedir}">
+      <include name="src"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.swebdsl" depends="compile.module.swebdsl.production,compile.module.swebdsl.tests" description="Compile module SWebDSL"/>
+  
+  <target name="compile.module.swebdsl.production" description="Compile module SWebDSL; production classes">
+    <mkdir dir="${swebdsl.output.dir}"/>
+    <scalac destdir="${swebdsl.output.dir}">
+      <src refid="swebdsl.module.sourcepath"/>
+      <classpath refid="swebdsl.module.classpath"/>
+      <patternset refid="excluded.from.compilation.swebdsl"/>
+    </scalac>
+    <javac destdir="${swebdsl.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.swebdsl}/javac">
+      <compilerarg line="${compiler.args.swebdsl}"/>
+      <bootclasspath refid="swebdsl.module.bootclasspath"/>
+      <classpath>
+        <pathelement location="${swebdsl.output.dir}"/>
+        <path refid="swebdsl.module.classpath"/>
+      </classpath>
+      <src refid="swebdsl.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.swebdsl"/>
+    </javac>
+    
+    <copy todir="${swebdsl.output.dir}">
+      <fileset dir="${module.swebdsl.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.swebdsl.tests" depends="compile.module.swebdsl.production" description="compile module SWebDSL; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.swebdsl" description="cleanup module">
+    <delete dir="${swebdsl.output.dir}"/>
+    <delete dir="${swebdsl.testoutput.dir}"/>
+  </target>
+  
+  <target name="init" description="Build initialization">
+    <!-- Perform any build initialization in this target -->
+  </target>
+  
+  <target name="clean" depends="clean.module.swebdsl" description="cleanup all"/>
+  
+  <target name="all" depends="init, clean, compile.module.swebdsl" description="build all"/>
+</project>
