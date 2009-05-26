@@ -1,4 +1,4 @@
-package swebdsl
+package swebdsl.ui
 
 class Style {
   import scala.collection.mutable.Stack
@@ -53,6 +53,11 @@ class Style {
     this
   }
 
+  def native(s: String)(c: => Unit) = {
+    setSelector(s, c)
+    this
+  }
+
   def body(c: => Unit): Style = {
     setSelector("body", c)
     this
@@ -101,18 +106,6 @@ class Style {
 
   def setSpecificStyle(css: String) {
     this.css.append(css)
-    /*
-    var s : Style = this
-    while(s.parent != null) {
-      s = s.parent
-    }
-    val key = s.styleStack map(_.name) mkString(" >> ")
-    if(s.styles contains key) {
-      s.styles(key).append(css)
-    } else {
-      s.styles(key) = new StringBuffer(css)
-    }
-    */
   }
 
   override def toString: String =

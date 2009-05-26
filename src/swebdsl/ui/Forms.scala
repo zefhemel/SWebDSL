@@ -1,4 +1,4 @@
-package swebdsl
+package swebdsl.ui
 
 import javax.servlet.http._
 
@@ -113,14 +113,14 @@ trait Forms {
     else
       throw new RuntimeException("Don't know how to create an input for " + a)
 
-  def action(s: String)(c: => Unit) {
+  def button(s: String)(c: => Unit) {
     actionCounter += 1
     mode match {
       case PageMode.Render => {
-        write("<input type=\"submit\" name=\"action-" + actionCounter + "\" value=\"" + s + "\">")
+        write("<input type=\"submit\" name=\"button-" + actionCounter + "\" value=\"" + s + "\">")
       }
       case PageMode.Action => {
-        if (request.getParameter("action-" + actionCounter) != null) {
+        if (request.getParameter("button-" + actionCounter) != null) {
           c
         }
       }

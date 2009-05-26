@@ -1,19 +1,8 @@
-package swebdsl
+package swebdsl.data
 
 import com.google.appengine.api.datastore._
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.ArrayBuffer
-
-trait Cache {
-  private var cache: HashMap[String, AnyRef] = new HashMap[String, AnyRef]
-
-  def cache[T](key: String, l: => T): T = {
-    if (!cache.contains(key)) {
-      cache(key) = l.asInstanceOf[AnyRef]
-    }
-    cache(key).asInstanceOf[T]
-  }
-}
 
 abstract class DataObject(key: String) {
   def singleton: DataObjectSingleton[_]
@@ -66,7 +55,7 @@ abstract class DataObject(key: String) {
 }
 
 
-abstract class DataObjectSingleton[T <: DataObject](var cls: Class[_]) {
+abstract class DataObjectSingleton[T <: DataObject](var cls: Class[T]) {
   def kind: String = cls.getSimpleName()
 
   def all(): ArrayBuffer[T] = {
@@ -106,11 +95,33 @@ abstract class DataObjectSingleton[T <: DataObject](var cls: Class[_]) {
       var keys = values.keySet().iterator()
       while (keys.hasNext()) {
         var key = keys.next()
-        cls.getMethod(key + "_$eq", cls.getMethod(key).getReturnType).invoke(e, values.get(key))
+        try {
+          cls.getMethod(key + "_$eq", cls.getMethod(key).getReturnType).invoke(e, values.get(key))
+        } catch {
+          case e: Exception =>
+        }
       }
       results.append(e)
     }
     return results
+  }
+}
+
+object DataUtils {
+  def key2DataObject(cls: Class[_], key: String): AnyRef = {
+    if (cls.getSuperclass() != classOf[DataObject]) {
+      return null
+    }
+    var e = cls.newInstance().asInstanceOf[DataObject]
+    var ds = DatastoreServiceFactory.getDatastoreService()
+    e.ent = ds.get(KeyFactory.createKey(cls.getSimpleName(), key.toInt))
+    var values = e.ent.getProperties()
+    var keys = values.keySet().iterator()
+    while (keys.hasNext()) {
+      var key = keys.next()
+      cls.getMethod(key + "_$eq", cls.getMethod(key).getReturnType).invoke(e, values.get(key))
+    }
+    return e
   }
 }
 

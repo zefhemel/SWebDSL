@@ -1,13 +1,14 @@
-package swebdsl
+package swebdsl.ui
 
 import javax.servlet._
 import javax.servlet.http._
 import java.io._
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.{HashMap, ArrayBuffer}
 import com.google.appengine.api.datastore._
 
 abstract class MainServlet extends HttpServlet {
   var pageMap = HashMap[String, String]()
+  var dataConverters = new ArrayBuffer[((Class[_], String) => AnyRef)]
 
   def pages: List[Page]
 
@@ -46,10 +47,20 @@ abstract class MainServlet extends HttpServlet {
             args(i) = pargs(i)
           } else if (argType == classOf[Int]) {
             args(i) = int2Integer(pargs(i).toInt)
-          } else if (argType.getSuperclass() == classOf[DataObject]) {
-            args(i) = key2DataObject(pargs(i), argType)
+            //} else if (argType.getSuperclass() == classOf[DataObject]) {
+            //args(i) = key2DataObject(pargs(i), argType)
           } else {
-            matches = false
+            var r: AnyRef = null
+            for (conv <- dataConverters) {
+              r = conv(argType, pargs(i))
+              if (r != null) {
+                matches = true
+                args(i) = r
+              }
+            }
+            if (r == null) {
+              matches = false
+            }
           }
           i += 1
         }
@@ -73,16 +84,4 @@ abstract class MainServlet extends HttpServlet {
     }
   }
 
-  private def key2DataObject(key: String, cls: Class[_]): DataObject = {
-    var e = cls.newInstance().asInstanceOf[DataObject]
-    var ds = DatastoreServiceFactory.getDatastoreService()
-    e.ent = ds.get(KeyFactory.createKey(cls.getSimpleName(), key.toInt))
-    var values = e.ent.getProperties()
-    var keys = values.keySet().iterator()
-    while (keys.hasNext()) {
-      var key = keys.next()
-      cls.getMethod(key + "_$eq", cls.getMethod(key).getReturnType).invoke(e, values.get(key))
-    }
-    return e
-  }
 }

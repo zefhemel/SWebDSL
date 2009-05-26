@@ -1,5 +1,6 @@
-package swebdsl
+package swebdsl.ui
 
+import collection.mutable.HashMap
 import java.io._
 import javax.servlet.http._
 
@@ -9,6 +10,18 @@ object PageMode extends Enumeration {
 }
 
 case class IgnoreMe()
+
+trait Cache {
+  private var cache: HashMap[String, AnyRef] = new HashMap[String, AnyRef]
+
+  def cache[T](key: String, l: => T): T = {
+    if (!cache.contains(key)) {
+      cache(key) = l.asInstanceOf[AnyRef]
+    }
+    cache(key).asInstanceOf[T]
+  }
+}
+
 
 abstract case class Page(ign: IgnoreMe) extends Forms with Cache {
   var sectionDepth = 1
@@ -28,6 +41,11 @@ abstract case class Page(ign: IgnoreMe) extends Forms with Cache {
     this.out = out
     this.request = req
     this.response = res
+    postInit
+  }
+
+  def postInit {
+
   }
 
   def resetCounters {
